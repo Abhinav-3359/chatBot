@@ -12,7 +12,10 @@ COPY mvnw pom.xml ./
 RUN chmod +x mvnw && ./mvnw -q dependency:go-offline
 
 COPY src/ src/
-RUN ./mvnw -q package -DskipTests
+# TEMP: -q dropped and -X added to debug a Lombok "cannot find symbol"
+# cascade that only reproduces on Render, not in an identical local
+# build - revert to `-q package -DskipTests` once diagnosed.
+RUN ./mvnw -X package -DskipTests
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
