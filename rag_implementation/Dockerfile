@@ -11,11 +11,16 @@ COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
 RUN chmod +x mvnw && ./mvnw -q dependency:go-offline
 
+# TEMP diagnostic: Render's build fails with a Lombok "cannot find
+# symbol" cascade that doesn't reproduce in an identical local build.
+# The real javac invocation (with -processorpath) is one giant line
+# that Render's log viewer appears to drop - this prints just the
+# single fact that matters, short enough to survive.
+RUN find /root/.m2/repository/org/projectlombok -name '*.jar' 2>&1 || echo "NO LOMBOK JARS FOUND IN LOCAL REPO"
+RUN ./mvnw -v
+
 COPY src/ src/
-# TEMP: -q dropped and -X added to debug a Lombok "cannot find symbol"
-# cascade that only reproduces on Render, not in an identical local
-# build - revert to `-q package -DskipTests` once diagnosed.
-RUN ./mvnw -X package -DskipTests
+RUN ./mvnw -q package -DskipTests
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
