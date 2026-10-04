@@ -11,24 +11,15 @@ COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
 RUN chmod +x mvnw && ./mvnw -q dependency:go-offline
 
-# TEMP diagnostic: the Lombok jar is present by name on Render (confirmed
-# via `find`), but that doesn't prove it's intact. javac discovers
-# annotation processors via META-INF/services/javax.annotation.processing.Processor
-# inside the jar - if that entry is missing or the jar is corrupt/
-# truncated, javac finds zero processors and silently compiles without
-# Lombok, which matches the symptom exactly (no error, no warning, just
-# missing generated methods). This prints that entry's content and the
-# jar's file size, both short enough to survive Render's log pipeline.
-RUN ls -la /root/.m2/repository/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar
-RUN jar tf /root/.m2/repository/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar | grep -i "annotation.processing.Processor" || echo "PROCESSOR SERVICE ENTRY NOT FOUND IN JAR LISTING"
-RUN mkdir -p /tmp/lombok-check && cd /tmp/lombok-check && jar xf /root/.m2/repository/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar META-INF/services/javax.annotation.processing.Processor && cat META-INF/services/javax.annotation.processing.Processor
-
-# TEMP diagnostic: jar is confirmed byte-identical to the working local
-# copy, so the next thing to rule out is whether Maven's *effective*
-# compiler-plugin config (after inheritance/interpolation) still has
-# annotationProcessorPaths on Render - in case something is stripping
-# or overriding it that wouldn't show up in the source pom.xml.
-RUN ./mvnw -q org.apache.maven.plugins:maven-help-plugin:3.5.1:effective-pom -Doutput=/tmp/effective-pom.xml && (grep -i "lombok\|annotationProcessorPath" /tmp/effective-pom.xml || echo "NO LOMBOK/annotationProcessorPath MENTION IN EFFECTIVE POM")
+# TEMP diagnostic: confirmed the Lombok jar is byte-identical to the
+# working local copy, and that the effective POM's annotationProcessorPaths
+# blocks are empty on Render (same grep, 3 blocks both places, populated
+# locally/empty on Render) even after a cache-cleared build. Need the
+# RAW, unfiltered XML around the first maven-compiler-plugin block (not
+# grep -i "lombok", which could itself be hiding something, e.g. if the
+# <path> tag or an XML attribute is the actual culprit) to see exactly
+# what's different structurally.
+RUN ./mvnw -q org.apache.maven.plugins:maven-help-plugin:3.5.1:effective-pom -Doutput=/tmp/effective-pom.xml && sed -n '/<artifactId>maven-compiler-plugin<\/artifactId>/,/<\/plugin>/p' /tmp/effective-pom.xml | head -40
 
 COPY src/ src/
 RUN ./mvnw -q package -DskipTests
