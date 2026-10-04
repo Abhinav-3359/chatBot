@@ -1,0 +1,14 @@
+# Root-level safety net - each subproject (rag_implementation, rag-ui,
+# embedding_services) also has its own .gitignore for its specific
+# build artifacts; this one catches anything at the repo root plus
+# secrets that must never be committed regardless of location.
+
+.env
+.env.compose
+.env.local
+*.env.local
+
+.DS_Store
+
+# Stray root-level venv (the real one lives in embedding_services/venv)
+/venv/

@@ -1,44 +1,66 @@
 package rag.example.rag_implementation.services;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import rag.example.rag_implementation.dto.LoginRequestDTO;
+import rag.example.rag_implementation.dto.LoginResponseDTO;
 import rag.example.rag_implementation.dto.RegisterRequestDTO;
+import rag.example.rag_implementation.exception.InvalidCredentialsException;
+import rag.example.rag_implementation.exception.UserAlreadyExistsException;
 import rag.example.rag_implementation.model.User;
 import rag.example.rag_implementation.repository.UserRepository;
+import rag.example.rag_implementation.security.JwtService;
 
 @Service
 public class AuthService {
-    @Autowired
-    UserService userService;
-    @Autowired
-    UserRepository userRepository;
 
-    public String register(RegisterRequestDTO request) {
+    private final UserRepository userRepository;
+    private final JwtService jwtService;
+    private final PasswordEncoder passwordEncoder;
 
-        User existing = userRepository.findByEmail(request.getEmail());
-
-        if (existing != null) {
-            return "User already exists";
-        }
-
-        userRepository.saveUser(request.getEmail(), request.getPassword());
-
-        return "User registered successfully";
+    public AuthService(UserRepository userRepository,
+                       JwtService jwtService,
+                       PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.jwtService = jwtService;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    public String login(LoginRequestDTO request) {
+    public void register(RegisterRequestDTO request) {
+
+        User existingUser = userRepository.findByEmail(request.getEmail());
+
+        if (existingUser != null) {
+            throw new UserAlreadyExistsException("User already exists.");
+        }
+
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+
+        userRepository.saveUser(
+                request.getEmail(),
+                encodedPassword
+        );
+    }
+
+    public LoginResponseDTO login(LoginRequestDTO request) {
+
         User user = userRepository.findByEmail(request.getEmail());
 
-        if (user == null) {
-            return "User not found";
+        if (user == null ||
+                !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+
+            throw new InvalidCredentialsException(
+                    "Invalid email or password."
+            );
         }
 
-        if (!user.getPassword().equals(request.getPassword())) {
-            return "Invalid password";
-        }
+        String token = jwtService.generateToken(user.getEmail());
 
-        return "Login successful";
+        return LoginResponseDTO.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .token(token)
+                .build();
     }
-
 }

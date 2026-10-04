@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+/*
+  Design tokens for Sakha's approved visual direction: navy and gold,
+  warm cream surfaces, Fraunces for the wordmark and headlines, IBM
+  Plex Sans and IBM Plex Mono for everything else.
+
+  The theme block below registers each color and font token as both a
+  real CSS custom property on root and a generated Tailwind utility, so
+  color-accent gives bg-accent, text-accent, border-accent, and so on.
+  Dark mode works by overriding the plain custom properties under the
+  media query below. The generated utilities reference the custom
+  properties directly, so they pick up the dark values automatically
+  without needing a second theme block.
+*/
+@theme {
+  --color-canvas: #faf3ea;
+  --color-surface: #fffdfa;
+  --color-surface-2: #f3e9da;
+
+  --color-sidebar: #121a33;
+  --color-sidebar-ink: #e7e0cf;
+  --color-sidebar-ink-dim: #7c84a8;
+  --color-sidebar-active: #1b2548;
+
+  --color-border: #e7dbc8;
+  --color-ink: #1c2340;
+  --color-ink-muted: #7c7260;
+
+  --color-accent: #ad7a1f;
+  --color-accent-ink: #ffffff;
+  --color-accent-soft: #f7ecd6;
+
+  --color-success: #3f7d4f;
+  --color-success-soft: #e7f2e8;
+  --color-warning: #bb5f28;
+  --color-warning-soft: #fbe9dd;
+  --color-danger: #b23b2e;
+  --color-danger-soft: #fae6e3;
+
+  --color-tag-teal: #2d7b6d;
+  --color-tag-teal-soft: #e2f0ec;
+  --color-tag-rose: #a6503f;
+  --color-tag-rose-soft: #f6e6e1;
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-canvas: #0c1120;
+    --color-surface: #151c33;
+    --color-surface-2: #1b2340;
+
+    --color-sidebar: #090d1b;
+    --color-sidebar-ink: #d6d1e4;
+    --color-sidebar-ink-dim: #5b6180;
+    --color-sidebar-active: #151d38;
+
+    --color-border: #2a3252;
+    --color-ink: #ede6d6;
+    --color-ink-muted: #8d93ad;
+
+    --color-accent: #d9ab5c;
+    --color-accent-ink: #17120a;
+    --color-accent-soft: #2e2616;
+
+    --color-success: #5fae79;
+    --color-success-soft: #17271d;
+    --color-warning: #d98052;
+    --color-warning-soft: #2c1c12;
+    --color-danger: #d9786b;
+    --color-danger-soft: #2d1917;
+
+    --color-tag-teal: #4fa596;
+    --color-tag-teal-soft: #132620;
+    --color-tag-rose: #d08177;
+    --color-tag-rose-soft: #2a1816;
+
+    color-scheme: dark;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}

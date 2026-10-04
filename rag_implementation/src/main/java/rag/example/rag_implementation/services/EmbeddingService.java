@@ -3,6 +3,7 @@ package rag.example.rag_implementation.services;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -11,10 +12,13 @@ public class EmbeddingService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
+    @Value("${embedding.service.url}")
+    private String embeddingServiceUrl;
+
     // used for document chunks
     public List<Double> createEmbedding(String text) {
 
-        String url = "http://localhost:9000/embed";
+        String url = embeddingServiceUrl + "/embed";
 
         Map<String, String> request = Map.of("text", text);
 
@@ -26,7 +30,7 @@ public class EmbeddingService {
     // used for user queries
     public List<Double> createQueryEmbedding(String text) {
 
-        String url = "http://localhost:9000/embed_query";
+        String url = embeddingServiceUrl + "/embed_query";
 
         Map<String, String> request = Map.of("text", text);
 

@@ -44,6 +44,28 @@ public class PineconeIntegrationService {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Api-Key", apiKey);
         headers.setContentType(MediaType.APPLICATION_JSON);
+        
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
+
+        restTemplate.postForObject(url, entity, String.class);
+    }
+
+    public void deleteVectors(String namespace, List<String> vectorIds) {
+
+        if (vectorIds == null || vectorIds.isEmpty()) {
+            return;
+        }
+
+        String url = indexUrl + "/vectors/delete";
+
+        Map<String, Object> request = Map.of(
+                "ids", vectorIds,
+                "namespace", namespace);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Api-Key", apiKey);
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
 

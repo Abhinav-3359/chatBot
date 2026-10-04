@@ -23,6 +23,12 @@ public class ChatBotRepository {
         return jdbcTemplate.query(sql, new ChatBotRowMapper());
     }
 
+    public List<ChatBotDO> getAllChatBotsByUserId(Long userId) {
+        String sql = "SELECT * FROM chatbots WHERE user_id = :userId";
+        MapSqlParameterSource params = new MapSqlParameterSource().addValue("userId", userId);
+        return jdbcTemplate.query(sql, params, new ChatBotRowMapper());
+    }
+
     public Integer saveChatBot(ChatBotDO chatBot) {
         String sql = "INSERT INTO chatbots (user_id, name, description, pinecone_namespace) VALUES (:userId, :name, :description, :pineconeNamespace)";
         MapSqlParameterSource params = new MapSqlParameterSource().addValue("userId", chatBot.getUserId())
@@ -41,16 +47,14 @@ public class ChatBotRepository {
         return chatBots.isEmpty() ? null : chatBots.get(0);
     }
 
-    public int updateChatBot(ChatBotDO chatBot) {
-        try {
+    public void updateChatBot(ChatBotDO chatBot) {
+
             String sql = "UPDATE chatbots SET name = :name, description = :description, pinecone_namespace = :pineconeNamespace WHERE id = :id";
             MapSqlParameterSource params = new MapSqlParameterSource().addValue("id", chatBot.getId())
                     .addValue("name", chatBot.getName()).addValue("description", chatBot.getDescription())
                     .addValue("pineconeNamespace", chatBot.getPineConeNamespace());
-            return jdbcTemplate.update(sql, params);
-        } catch (Exception e) {
-            throw e;
-        }
+            jdbcTemplate.update(sql, params);
+        
     }
 
 }
