@@ -7,18 +7,21 @@
 FROM eclipse-temurin@sha256:3e3c176ffed168beb42c607be9bc1639b466cf00261a0fb04425562c9d0c5c2b AS build
 WORKDIR /app
 
-# Confirmed (via diagnostic build output) that Render's amd64 JVM build
-# of this exact JDK version silently skips Lombok's annotation
-# processing - no error, no warning, javac just runs without it - while
-# the aarch64 build (local) runs it fine. This is Lombok's own
-# documented fix: without these opens, its runtime self-patching of
-# javac's internals doesn't always auto-apply depending on platform/JVM
-# build specifics.
-ENV MAVEN_OPTS="--add-opens jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED --add-opens jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED --add-opens jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-opens jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED --add-opens jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED --add-opens jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-opens jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED --add-opens jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-opens jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED --add-opens jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED"
-
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
 RUN chmod +x mvnw && ./mvnw -q dependency:go-offline
+
+# TEMP diagnostic: the Lombok jar is present by name on Render (confirmed
+# via `find`), but that doesn't prove it's intact. javac discovers
+# annotation processors via META-INF/services/javax.annotation.processing.Processor
+# inside the jar - if that entry is missing or the jar is corrupt/
+# truncated, javac finds zero processors and silently compiles without
+# Lombok, which matches the symptom exactly (no error, no warning, just
+# missing generated methods). This prints that entry's content and the
+# jar's file size, both short enough to survive Render's log pipeline.
+RUN ls -la /root/.m2/repository/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar
+RUN jar tf /root/.m2/repository/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar | grep -i "annotation.processing.Processor" || echo "PROCESSOR SERVICE ENTRY NOT FOUND IN JAR LISTING"
+RUN mkdir -p /tmp/lombok-check && cd /tmp/lombok-check && jar xf /root/.m2/repository/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar META-INF/services/javax.annotation.processing.Processor && cat META-INF/services/javax.annotation.processing.Processor
 
 COPY src/ src/
 RUN ./mvnw -q package -DskipTests
