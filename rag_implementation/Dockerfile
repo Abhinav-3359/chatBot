@@ -1,25 +1,15 @@
 # Multi-stage: build with Maven + full JDK, run with just a slim JRE so
 # the final image doesn't carry the whole build toolchain around.
 
-# Pinned by digest (not the floating `21-jdk` tag) - Lombok's annotation
-# processing is sensitive to the exact JDK patch build, and this is the
-# JDK 21.0.12.1 build verified locally to compile this project cleanly.
+# Pinned by digest (not the floating `21-jdk` tag) for reproducible
+# builds - the digest is a multi-arch manifest, so this still resolves
+# to the right image on both amd64 (Render) and arm64 (local).
 FROM eclipse-temurin@sha256:3e3c176ffed168beb42c607be9bc1639b466cf00261a0fb04425562c9d0c5c2b AS build
 WORKDIR /app
 
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
 RUN chmod +x mvnw && ./mvnw -q dependency:go-offline
-
-# TEMP diagnostic: confirmed the Lombok jar is byte-identical to the
-# working local copy, and that the effective POM's annotationProcessorPaths
-# blocks are empty on Render (same grep, 3 blocks both places, populated
-# locally/empty on Render) even after a cache-cleared build. Need the
-# RAW, unfiltered XML around the first maven-compiler-plugin block (not
-# grep -i "lombok", which could itself be hiding something, e.g. if the
-# <path> tag or an XML attribute is the actual culprit) to see exactly
-# what's different structurally.
-RUN ./mvnw -q org.apache.maven.plugins:maven-help-plugin:3.5.1:effective-pom -Doutput=/tmp/effective-pom.xml && sed -n '/<artifactId>maven-compiler-plugin<\/artifactId>/,/<\/plugin>/p' /tmp/effective-pom.xml | head -40
 
 COPY src/ src/
 RUN ./mvnw -q package -DskipTests
