@@ -1,7 +1,10 @@
 # Multi-stage: build with Maven + full JDK, run with just a slim JRE so
 # the final image doesn't carry the whole build toolchain around.
 
-FROM eclipse-temurin:21-jdk AS build
+# Pinned by digest (not the floating `21-jdk` tag) - Lombok's annotation
+# processing is sensitive to the exact JDK patch build, and this is the
+# JDK 21.0.12.1 build verified locally to compile this project cleanly.
+FROM eclipse-temurin@sha256:3e3c176ffed168beb42c607be9bc1639b466cf00261a0fb04425562c9d0c5c2b AS build
 WORKDIR /app
 
 COPY .mvn/ .mvn/
