@@ -23,6 +23,13 @@ RUN ls -la /root/.m2/repository/org/projectlombok/lombok/1.18.42/lombok-1.18.42.
 RUN jar tf /root/.m2/repository/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar | grep -i "annotation.processing.Processor" || echo "PROCESSOR SERVICE ENTRY NOT FOUND IN JAR LISTING"
 RUN mkdir -p /tmp/lombok-check && cd /tmp/lombok-check && jar xf /root/.m2/repository/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar META-INF/services/javax.annotation.processing.Processor && cat META-INF/services/javax.annotation.processing.Processor
 
+# TEMP diagnostic: jar is confirmed byte-identical to the working local
+# copy, so the next thing to rule out is whether Maven's *effective*
+# compiler-plugin config (after inheritance/interpolation) still has
+# annotationProcessorPaths on Render - in case something is stripping
+# or overriding it that wouldn't show up in the source pom.xml.
+RUN ./mvnw -q org.apache.maven.plugins:maven-help-plugin:3.5.1:effective-pom -Doutput=/tmp/effective-pom.xml && (grep -i "lombok\|annotationProcessorPath" /tmp/effective-pom.xml || echo "NO LOMBOK/annotationProcessorPath MENTION IN EFFECTIVE POM")
+
 COPY src/ src/
 RUN ./mvnw -q package -DskipTests
 
